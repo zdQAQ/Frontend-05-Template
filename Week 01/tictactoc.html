@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>小小游戏</title>
+  <style type="text/css">
+    body {
+      text-align: center;
+    }
+
+    .cell {
+      width: 100px;
+      height: 100px;
+      background-color: #3823;
+      display: inline-block;
+      border: solid 1px white;
+      vertical-align: middle;
+
+      line-height: 100px;
+      font-size: 50px;
+      text-align: center;
+    }
+  </style>
+</head>
+
+<body>
+  <h2 id="tip">You go first !</h2>
+  <div id="board"></div>
+</body>
+<script>
+  const DefO = 1
+  const DefX = 2
+  const DefOrder = 3
+  const FirstMove = DefO
+
+  let thisUser = FirstMove
+
+  let pattern = [
+    0, 0, 0,
+    0, 0, 0,
+    0, 0, 0
+  ]
+
+  function init() {
+    pattern = [
+      0, 0, 0,
+      0, 0, 0,
+      0, 0, 0
+    ]
+    setup()
+    thisUser = FirstMove
+  }
+
+  function isX(x, y) {
+    return pattern[x * DefOrder + y] === DefX
+  }
+
+  function isO(x, y) {
+    return pattern[x * DefOrder + y] === DefO
+  }
+
+  function setup() {
+    let board = document.getElementById('board')
+    board.innerHTML = ""
+    for (let i = 0; i < DefOrder; i++) {
+      for (let j = 0; j < DefOrder; j++) {
+        let cell = document.createElement('div')
+        cell.classList.add('cell')
+        cell.innerText = isX(i, j) ? DefX : isO(i, j) ? DefO : ''
+        cell.addEventListener('click', (e) => {
+          if (e.target.innerText === '') {
+            userMove(e.target)
+          }
+        })
+        board.appendChild(cell)
+      }
+      board.appendChild(document.createElement('br'))
+    }
+  }
+
+  function checkResult() {
+    if (check(pattern, thisUser)) {
+      const tip = `${(thisUser !== FirstMove ? 'You lose!' : 'You win~')} let's do it again!`
+      document.getElementById('tip').innerText = tip
+      setTimeout(() => {
+        const ok = confirm(tip)
+        if (ok) {
+          init()
+          document.getElementById('tip').innerText = 'OK, one more time.'
+        }
+      }, 0)
+      return true
+    }
+  }
+
+  function setCell(cell) {
+    const AllCells = document.querySelectorAll('.cell')
+    let index = null
+    for (let i = 0; i < AllCells.length; i++) {
+      if (AllCells[i] === cell) {
+        index = i
+      }
+    }
+    pattern[index] = thisUser
+    cell.innerText = thisUser === DefO ? 'O' : 'X'
+    if(pattern.indexOf(0)===-1){
+      setTimeout(() => {
+        const ok = confirm(`You are lucky! let's do it again!`)
+        if (ok) {
+          init()
+          document.getElementById('tip').innerText = 'Take your chance.'
+        }
+      }, 0)
+    }
+  }
+
+  function setThisUser(value) {
+    thisUser = value
+  }
+
+  function oppositeUser(thisUser) {
+    return thisUser === DefO ? DefX : DefO
+  }
+
+  function userMove(cell) {
+    setCell(cell)
+    if (!checkResult()) {
+      setThisUser(oppositeUser(thisUser))
+      computerMove()
+    }
+  }
+
+  function computerMove() {
+    let choice = bestChoice(pattern, thisUser)
+    if (choice.point) {
+      const AllCells = document.querySelectorAll('.cell')
+      const cell = AllCells[choice.point[0] * 3 + choice.point[1]]
+      setCell(cell)
+    }
+    if (!checkResult()) {
+      setThisUser(oppositeUser(thisUser))
+    }
+  }
+
+  function clone(pattern) {
+    return Object.create(pattern)
+  }
+
+  function willWin(pattern, thisUser) {
+    for (let i = 0; i < DefOrder; i++) {
+      for (let j = 0; j < DefOrder; j++) {
+        if (pattern[i * DefOrder + j]) {
+          continue
+        }
+        let tmp = clone(pattern)
+        tmp[i * DefOrder + j] = thisUser
+        if (check(tmp, thisUser)) {
+          return [i, j]
+        }
+      }
+    }
+    return null
+  }
+
+  function bestChoice(pattern, thisUser) {
+    let point = willWin(pattern, thisUser)
+    if (point) {
+      return {
+        point: point,
+        result: 1
+      }
+    }
+    let result = -1
+    outer: for (let i = 0; i < DefOrder; i++) {
+      for (let j = 0; j < DefOrder; j++) {
+        if (pattern[i * DefOrder + j]) {
+          continue;
+        }
+        let tmp = clone(pattern);
+        tmp[i * DefOrder + j] = thisUser;
+        let opp = bestChoice(tmp, oppositeUser(thisUser))
+        if (-opp.result >= result) {
+          point = [i, j];
+          result = -opp.result;
+        }
+        if (result === 1) break outer;
+      }
+    }
+    return {
+      point: point,
+      result: point ? result : 0
+    }
+  }
+
+  function check(pattern, thisUser) {
+    for (let i = 0; i < DefOrder; i++) {
+      let win = true;
+      for (let j = 0; j < DefOrder; j++) {
+        if (pattern[i * DefOrder + j] !== thisUser) {
+          win = false;
+        }
+      }
+      if (win) {
+        return true;
+      }
+    }
+    for (let i = 0; i < DefOrder; i++) {
+      let win = true;
+      for (let j = 0; j < DefOrder; j++) {
+        if (pattern[j * DefOrder + i] !== thisUser) {
+          win = false;
+        }
+      }
+      if (win) {
+        return true;
+      }
+    }
+    {
+      let win = true;
+      for (let j = 0; j < DefOrder; j++) {
+        if (pattern[j * DefOrder + j] !== thisUser) {
+          win = false;
+        }
+      }
+      if (win) {
+        return true;
+      }
+    }
+    {
+      let win = true;
+      for (let j = 0; j < DefOrder; j++) {
+        if (pattern[j * DefOrder + 2 - j] !== thisUser) {
+          win = false;
+        }
+      }
+      if (win) {
+        return true;
+      }
+    }
+  }
+
+  init()
+</script>
+
+</html>
