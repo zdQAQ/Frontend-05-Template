@@ -34,23 +34,23 @@
   const DefX = 2
   const DefOrder = 3
   const FirstMove = DefO
+  let status = 1 // GAME OVER = 0 , GAME RUNNING = 1
 
   let thisUser = FirstMove
 
-  let pattern = [
-    0, 0, 0,
-    0, 0, 0,
-    0, 0, 0
-  ]
+  let pattern = []
+  for (let i = 0; i < DefOrder * DefOrder; i++) {
+    pattern.push(0)
+  }
 
   function init() {
-    pattern = [
-      0, 0, 0,
-      0, 0, 0,
-      0, 0, 0
-    ]
+    pattern = []
+    for (let i = 0; i < DefOrder * DefOrder; i++) {
+      pattern.push(0)
+    }
     setup()
     thisUser = FirstMove
+    status = 1
   }
 
   function isX(x, y) {
@@ -68,8 +68,20 @@
       for (let j = 0; j < DefOrder; j++) {
         let cell = document.createElement('div')
         cell.classList.add('cell')
+        const id = i * DefOrder + j
+        cell.setAttribute('id', id)
+        cell.setAttribute('x', i)
+        cell.setAttribute('y', j)
         cell.innerText = isX(i, j) ? DefX : isO(i, j) ? DefO : ''
         cell.addEventListener('click', (e) => {
+          if (status === 0) {
+            const ok = confirm('Play again?')
+            if (ok) {
+              init()
+              document.getElementById('tip').innerText = 'OK, one more time.'
+            }
+            return
+          }
           if (e.target.innerText === '') {
             userMove(e.target)
           }
@@ -82,6 +94,7 @@
 
   function checkResult() {
     if (check(pattern, thisUser)) {
+      status = 0
       const tip = `${(thisUser !== FirstMove ? 'You lose!' : 'You win~')} let's do it again!`
       document.getElementById('tip').innerText = tip
       setTimeout(() => {
@@ -96,16 +109,10 @@
   }
 
   function setCell(cell) {
-    const AllCells = document.querySelectorAll('.cell')
-    let index = null
-    for (let i = 0; i < AllCells.length; i++) {
-      if (AllCells[i] === cell) {
-        index = i
-      }
-    }
+    const index = cell.id
     pattern[index] = thisUser
     cell.innerText = thisUser === DefO ? 'O' : 'X'
-    if(pattern.indexOf(0)===-1){
+    if (pattern.indexOf(0) === -1) {
       setTimeout(() => {
         const ok = confirm(`You are lucky! let's do it again!`)
         if (ok) {
@@ -128,16 +135,15 @@
     setCell(cell)
     if (!checkResult()) {
       setThisUser(oppositeUser(thisUser))
-      computerMove()
+      computerMove(cell)
     }
   }
 
-  function computerMove() {
+  function computerMove(cell) {
     let choice = bestChoice(pattern, thisUser)
     if (choice.point) {
-      const AllCells = document.querySelectorAll('.cell')
-      const cell = AllCells[choice.point[0] * 3 + choice.point[1]]
-      setCell(cell)
+      const node = document.getElementById(choice.point[0] * DefOrder + choice.point[1])
+      setCell(node)
     }
     if (!checkResult()) {
       setThisUser(oppositeUser(thisUser))
@@ -145,7 +151,7 @@
   }
 
   function clone(pattern) {
-    return Object.create(pattern)
+    return Object.assign([], pattern)
   }
 
   function willWin(pattern, thisUser) {
@@ -193,6 +199,49 @@
       result: point ? result : 0
     }
   }
+
+  // function bestChoice(pattern, thisUser, cell) {
+  //   let point = willWin(pattern, thisUser)
+  //   if (point) {
+  //     return {
+  //       point: point,
+  //       result: 1
+  //     }
+  //   }
+  //   let result = -1
+  //   const x = Number(cell.getAttribute('x'))
+  //   const y = Number(cell.getAttribute('y'))
+  //   const minX = (x - 1) <= 0 ? 0 : (x - 1)
+  //   const maxX = (x + 2) >= DefOrder ? DefOrder : (x + 2)
+  //   const minY = (y - 1) <= 0 ? 0 : (y - 1)
+  //   const maxY = (y + 2) >= DefOrder ? DefOrder : (y + 2)
+  //   outer: for (let i = minX; i < maxX; i++) {
+  //     for (let j = minY; j < maxY; j++) {
+  //       if (pattern[i * DefOrder + j]) {
+  //         continue;
+  //       }
+  //       let tmp = clone(pattern);
+  //       tmp[i * DefOrder + j] = thisUser;
+  //       const tempCell = document.createElement('div')
+  //       tempCell.setAttribute('x', i)
+  //       tempCell.setAttribute('y', j)
+  //       let opp = bestChoice(tmp, oppositeUser(thisUser), tempCell)
+  //       if (-opp.result >= result) {
+  //         point = [j, i];
+  //         result = -opp.result;
+  //       }
+  //       if (result === 1) break outer;
+  //       // if ((i === maxX - 1) && (j === maxY - 1)) {
+  //       //   break;
+  //       //   break outer;
+  //       // }
+  //     }
+  //   }
+  //   return {
+  //     point: point,
+  //     result: point ? result : 0
+  //   }
+  // }
 
   function check(pattern, thisUser) {
     for (let i = 0; i < DefOrder; i++) {
