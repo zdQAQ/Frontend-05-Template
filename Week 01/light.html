@@ -1,0 +1,102 @@
+<head>
+    <meta charset="UTF-8">
+    <title>red green light</title>
+    <style>
+        div {
+            height: 100px;
+            width: 100px;
+            margin: 30px;
+            border-radius: 50%;
+            background: gray;
+            display: inline-block;
+        }
+
+        .green.light {
+            background: green;
+        }
+
+        .yellow.light {
+            background: yellow;
+        }
+
+        .red.light {
+            background: red;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="green"></div>
+    <div class="yellow"></div>
+    <div class="red"></div>
+    <script>
+        function light(type) {
+            if (!type) {
+                return;
+            }
+            var lights = document.getElementsByTagName("div");
+            for (let index = 0; index < lights.length; index++) {
+                const e = lights[index];
+                e.classList.remove("light");
+            }
+            document.getElementsByClassName(type)[0].classList.add('light');
+        }
+
+        function green() {
+            light('green')
+        }
+
+        function yellow() {
+            light('yellow')
+        } 
+        
+        function red() {
+            light('red')
+        }
+
+        function sleep(t) {
+            return new Promise((resolve, reject) => {
+                setTimeout(resolve, t)
+            })
+        }
+
+        function goForCallback() {
+            green()
+            setTimeout(_ => {
+                yellow();
+                setTimeout(() => {
+                    red();
+                    setTimeout(() => {
+                        goForCallback()
+                    }, 500)
+                }, 200);
+            }, 1000)
+        }
+
+        function goForPromise() {
+            green();
+            sleep(1000).then(() => {
+                yellow();
+                return sleep(200)
+            }).then(() => {
+                red();
+                return sleep(500)
+            }).then(() => {
+                goForPromise()
+            })
+        }
+
+        async function goForAwait() {
+            green();
+            await sleep(1000);
+            yellow()
+            await sleep(200);
+            red();
+            await sleep(500)
+            goForAwait();
+        }
+
+    </script>
+</body>
+
+</html>
