@@ -1,0 +1,40 @@
+<script>
+    const indexOf = (source, pattern) => {
+      const table = generateTable(pattern)
+      let i = 0, j = 0
+      while (i < source.length) {
+        if (source[i] === pattern[j]) {
+          ++i, ++j;
+        } else {
+          if (j > 0) {
+            j = table[j]
+          } else {
+            ++i
+          }
+        }
+        if (j === pattern.length) {
+          return true
+        }
+      }
+      return false
+    }
+  
+    const generateTable = (str) => {
+      const table = new Array(str.length).fill(0)
+      let i = 1, j = 0
+      while (i < str.length) {
+        if (str[i] === str[j]) {
+          i++;
+          j++;
+          table[i] = j
+        } else {
+          if (j > 0) {
+            j = table[j]
+          } else {
+            i ++
+          }
+        }
+      }
+      return table
+    }
+  </script>
